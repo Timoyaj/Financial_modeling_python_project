@@ -1,0 +1,149 @@
+'''
+Below are functions unsed in the financial model. I have added inline comments to each function to describe its purpose, inputs, and outputs, making it easier to understand what each function does and how they contribute to the financial statement projections
+'''
+
+
+#======================= Income Statement functions:===========================================
+
+def calculate_revenue(initial_revenue, growth_rate, num_years):
+    # Calculate projected revenues for each year based on the initial revenue and revenue growth rate.
+    revenue = [initial_revenue]
+    for year in range(1, num_years):
+        revenue.append(revenue[-1] * (1 + growth_rate))
+    return revenue
+
+def calculate_cogs(revenue, cogs_percentage):
+    # Calculate projected Cost of Goods Sold (COGS) for each year based on the revenue and COGS percentage assumption.
+    cogs = [r * cogs_percentage for r in revenue]
+    return cogs
+
+def calculate_depreciation(gross_ppe, depreciation_rate):
+    # Calculate projected depreciation expense for each year based on gross property, plant, and equipment (PPE) and the depreciation rate assumption.
+    depreciation = [gross_ppe[0] * depreciation_rate]
+    for i in range(1, len(gross_ppe)):
+        depreciation.append(gross_ppe[i] * depreciation_rate)
+    return depreciation
+
+def calculate_gross_profit(revenue, cogs):
+    # Calculate projected gross profit for each year based on the revenue and COGS calculations.
+    gross_profit = [r - c for r, c in zip(revenue, cogs)]
+    return gross_profit
+
+def calculate_sga(revenue, sga_percentage):
+    # Calculate projected Selling, General, and Administrative (SG&A) expenses for each year based on the revenue and SG&A percentage assumption.
+    sga = [r * sga_percentage for r in revenue]
+    return sga
+
+def calculate_other_income_expenses(num_years):
+    # Calculate projected other income/expense items for each year (assumed to be zero for all years).
+    return [0] * num_years
+
+def calculate_tax_expense(profit_before_tax, tax_rate):
+    # Calculate projected tax expenses for each year based on the profit before tax and the tax rate assumption.
+    tax_expense = [p * tax_rate for p in profit_before_tax]
+    return tax_expense
+
+def calculate_net_income(gross_profit, other_income_expenses, tax_expense):
+    # Calculate projected net income for each year based on gross profit, other income/expense, and tax expenses.
+    net_income = [gp + other - tax for gp, other, tax in zip(gross_profit, other_income_expenses, tax_expense)]
+    return net_income
+
+#========= Balance Sheet functions:======================================================
+
+def calculate_ar_turnover_days(ar_days, revenue):
+    # Calculate projected Accounts Receivable (AR) turnover days for each year based on AR turnover days and revenue assumptions.
+    ar_turnover_days = [(ar_days * 360) / r for r in revenue]
+    return ar_turnover_days
+
+def calculate_inventory_turnover_days(inventory_days, revenue):
+    # Calculate projected inventory turnover days for each year based on inventory turnover days and revenue assumptions.
+    inventory_turnover_days = [(inventory_days * 360) / r for r in revenue]
+    return inventory_turnover_days
+
+def calculate_days_payable(payable_days, num_years):
+    # Calculate projected days payable for each year (assumed to be the same for all years).
+    return [payable_days] * num_years
+
+def calculate_other_current_assets(other_current_assets, num_years):
+    # Calculate projected other current assets for each year (assumed to be the same for all years).
+    return [other_current_assets] * num_years
+
+def calculate_gross_ppe(capex, asset_disposition):
+    # Calculate projected gross property, plant, and equipment (PPE) for each year based on capital expenditures and asset disposition assumptions.
+    gross_ppe = [0]
+    for i in range(1, len(capex)):
+        gross_ppe.append(gross_ppe[-1] + capex[i] - asset_disposition[i])
+    return gross_ppe
+
+def calculate_accumulated_depreciation(depreciation):
+    # Calculate projected accumulated depreciation for each year based on the depreciation expenses.
+    accumulated_depreciation = [0]
+    for i in range(1, len(depreciation)):
+        accumulated_depreciation.append(accumulated_depreciation[-1] + depreciation[i])
+    return accumulated_depreciation
+
+def calculate_other_current_liabilities(cogs, other_current_liabilities_percentage):
+    # Calculate projected other current liabilities for each year based on COGS and other current liabilities percentage assumption.
+    other_current_liabilities = [c * other_current_liabilities_percentage for c in cogs]
+    return other_current_liabilities
+
+def calculate_long_term_debt(ending_long_term_debt):
+    # Calculate projected long-term debt for each year based on the ending long-term debt from the previous year.
+    return [0] + ending_long_term_debt[:-1]
+
+def calculate_retained_earnings(net_income, prior_year_retained_earnings):
+    # Calculate projected retained earnings for each year based on net income and prior year's retained earnings.
+    retained_earnings = [prior_year_retained_earnings[0] + net_income[0]]
+    for i in range(1, len(net_income)):
+        retained_earnings.append(retained_earnings[-1] + net_income[i])
+    return retained_earnings
+
+#.=================Cash Flow functions:.======================================
+def calculate_cash_from_operations(net_income, depreciation, changes_in_working_capital):
+    # Calculate projected cash from operations for each year based on net income, depreciation, and changes in working capital.
+    cash_from_operations = [n + d + w for n, d, w in zip(net_income, depreciation, changes_in_working_capital)]
+    return cash_from_operations
+
+def calculate_capex(capex_percentage, revenue):
+    # Calculate projected capital expenditures (capex) for each year based on capex percentage of revenue.
+    capex = [c * r for c, r in zip(capex_percentage, revenue)]
+    return capex
+
+def calculate_changes_in_working_capital(ar_turnover_days, inventory_turnover_days, days_payable,
+                                        revenue, cogs, other_current_assets, other_current_liabilities):
+    # Calculate projected changes in working capital for each year based on various assumptions.
+    changes_in_ar = [-(a / 360) * r for a, r in zip(ar_turnover_days, revenue)]
+    changes_in_inventory = [-(i / 360) * r for i, r in zip(inventory_turnover_days, revenue)]
+    changes_in_ap = [(p / 360) * c for p, c in zip(days_payable, cogs)]
+    changes_in_other_current_assets = [0] * num_years
+    changes_in_other_current_liabilities = [l * cogs[i] for i, l in enumerate(other_current_liabilities)]
+    
+    working_capital_changes = [a + i + ap + oca + occl for a, i, ap, oca, occl in zip(
+        changes_in_ar, changes_in_inventory, changes_in_ap, changes_in_other_current_assets, changes_in_other_current_liabilities
+    )]
+    return working_capital_changes
+
+def calculate_cash_from_investing(capex, asset_disposition):
+    # Calculate projected cash from investing activities for each year based on capital expenditures and asset disposition.
+    cash_from_investing = [-c + d for c, d in zip(capex, asset_disposition)]
+    return cash_from_investing
+
+def calculate_cash_from_financing(change_in_long_term_debt, dividend_payments):
+    # Calculate projected cash from financing activities for each year based on changes in long-term debt and dividend payments.
+    cash_from_financing = [c + d for c, d in zip(change_in_long_term_debt, dividend_payments)]
+    return cash_from_financing
+
+def calculate_change_in_cash(cash_from_operations, cash_from_investing, cash_from_financing):
+    # Calculate projected change in cash for each year based on cash from operations, cash from investing, and cash from financing.
+    change_in_cash = [o + i + f for o, i, f in zip(cash_from_operations, cash_from_investing, cash_from_financing)]
+    return change_in_cash
+
+def calculate_beginning_cash(ending_cash):
+    # Calculate projected beginning cash balance for each year based on the ending cash balance from the previous year.
+    beginning_cash = [0] + ending_cash[:-1]
+    return beginning_cash
+
+def calculate_ending_cash(beginning_cash, change_in_cash):
+    # Calculate projected ending cash balance for each year based on beginning cash balance and change in cash.
+    ending_cash = [b + c for b, c in zip(beginning_cash, change_in_cash)]
+    return ending_cash
